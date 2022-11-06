@@ -1,5 +1,4 @@
-
-includedir := deps/include/*/
+includes := -I deps/include/SDL2/ -I deps/include/SDL_FontCache
 libdir := deps/lib/
 srcdir := src/
 files := src/*.c
@@ -14,6 +13,6 @@ debug: flags += -mconsole -g
 debug: build
 
 build:
-	gcc $(files) -I $(srcdir) -I $(includedir) -o $(out) -L $(libdir) -l SDL2 -l SDL2_image \
+	gcc $(files) deps/include/SDL_FontCache/SDL_FontCache.c  -I $(srcdir) $(includes) -o $(out) -L $(libdir) -l SDL2 -l SDL2_image -l SDL2_ttf \
 	$(flags)
 	cp ./assets/*.png ./bin/assets

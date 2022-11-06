@@ -16,10 +16,10 @@ struct Tetromino
 {
 	TetrominoShape shape;
 	Point cells[4];
-	Uint8 rotation;
 	Color color;
 };
 
+TetrominoShape GetRandomTetrominoShape(void);
 Tetromino CreateRandomTetromino(Point position);
 Tetromino CreateTetromino(Point position, TetrominoShape shape);
 
@@ -30,10 +30,11 @@ bool TryMoveTetromino(Tetromino* tetromino, Point direction, const Level* level)
 
 void RotateTetromino(Tetromino* tetromino);
 bool CanRotateTetromino(const Tetromino* tetromino, const Level* level);
-bool TryRotateTetromino(Tetromino* tetromino, const Level* level);
+bool TryRotateTetromino(Tetromino* tetromino, const Level* level, bool wallKick);
 
 void DrawTetrominoCell(SDL_Renderer* renderer, const SDL_Rect* destRect, Color color);
 void DrawTetromino(SDL_Renderer* renderer, const Tetromino* position);
+void DrawTetrominoCentered(SDL_Renderer* renderer, const Tetromino* position);
 
 Uint64 GetTimeSinceLastMove(void);
 Uint64 GetLastMoveTime(void);

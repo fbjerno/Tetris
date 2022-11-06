@@ -13,9 +13,14 @@ SDL_Rect srcRect = {0, 0, CELLSIZE, CELLSIZE};
 
 Uint64 lastMoveTime;
 
+TetrominoShape GetRandomTetrominoShape(void)
+{
+    return (TetrominoShape)RandomInt(Shape_Start + 1, Shape_End - 1);
+}
+
 Tetromino CreateRandomTetromino(Point position)
 {
-	return CreateTetromino(position, (TetrominoShape)RandomInt(Shape_Start + 1, Shape_End - 1));
+  return CreateTetromino(position, GetRandomTetrominoShape());
 }
 
 Tetromino CreateTetromino(Point position, TetrominoShape shape)
@@ -38,7 +43,7 @@ Tetromino CreateTetromino(Point position, TetrominoShape shape)
 		case Shape_I:
 			cells[1].x = 1; cells[1].y = 0;
 			cells[2].x = 2; cells[2].y = 0;
-			cells[3].x = 3; cells[3].y = 0; 
+			cells[3].x = -1; cells[3].y = 0; 
 			tetromino.color = Color(50, 225, 200, 255);
 			break;
 		// Blue L shape
@@ -141,21 +146,24 @@ Point RotatePointClockwiseAroundOrigin(Point point, Point origin)
 
 void RotateTetromino(Tetromino* tetromino)
 {
+	Point* cells = tetromino->cells;
 	// Box shape is completely symmetrical so rotation doesn't actually do anything (and origin is in between cells, which is problematic).
 	// Bar shape has it's origin in between it's cells, so it needs special rotation logic as this system can't handle decimals
 	if (tetromino->shape != Shape_O && tetromino->shape != Shape_I)
 	{
 		for (int i = 1; i < 4; i++)
-			tetromino->cells[i] = RotatePointClockwiseAroundOrigin(tetromino->cells[i], tetromino->cells[0]);
+			cells[i] = RotatePointClockwiseAroundOrigin(cells[i], cells[0]);
 	}
 	
 	if (tetromino->shape == Shape_I)
-	{
-		// I can't believe this works
+	{	
 		Point newDirection = RotatePointClockwiseAroundOrigin(PointSubtract(tetromino->cells[1], tetromino->cells[0]), POINT_ZERO);
-		tetromino->cells[0] = PointSubtract(tetromino->cells[1], newDirection);
-		for (int i = 1; i < 4; i++)
-			tetromino->cells[i] = PointAdd(tetromino->cells[0], PointScale(newDirection, i));
+		// Since cells[0] is considered origin and is the second cell in the bar (closer to center), we have to do this nonsense.
+		// If the origin was the first cell in the bar, you could instead write for(int i = 1...) cells[i] = cells[0] + direction * i, which is much more clear
+		cells[0] = tetromino->cells[1];
+		cells[1] = PointAdd(cells[0], newDirection);
+		cells[2] = PointAdd(cells[1], newDirection);
+		cells[3] = PointSubtract(cells[0], newDirection);
 	}
 }
 
@@ -163,30 +171,37 @@ bool CanRotateTetromino(const Tetromino* tetromino, const Level* level)
 {
 	Tetromino rotateTest = *tetromino;
 	RotateTetromino(&rotateTest);
-	
 	return !CheckTetrominoCollision(&rotateTest, level);
 }
 
-bool TryRotateTetromino(Tetromino* tetromino, const Level* level)
+bool TryRotateTetromino(Tetromino* tetromino, const Level* level, bool wallKick)
 {
-	if (CanRotateTetromino(tetromino, level))
+	static const Point offsets[7] = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {2, 0}, {-2, 0}};
+	Tetromino rotateTest = *tetromino;
+	RotateTetromino(&rotateTest);
+	Point originalPosition = rotateTest.cells[0];
+	
+	int count = rotateTest.shape == Shape_I ? 7 : 5;
+	for (int i = 0; i < count; i++)
 	{
-		RotateTetromino(tetromino);
-		return true;
+		SetTetrominoPosition(&rotateTest, PointAdd(originalPosition, offsets[i]));
+		if (!CheckTetrominoCollision(&rotateTest, level))
+		{
+			*tetromino = rotateTest;
+			return true;
+		}
 	}
-	else
-	{
-		return false;
-	}
+	
+	return false;
 }
 
 void DrawTetrominoCell(SDL_Renderer* renderer, const SDL_Rect* destRect, Color color)
 {
-	SDL_SetTextureColorMod(assets->tetrominoBase, ColorComponentsRGB(color));
-	SDL_RenderCopy(renderer, assets->tetrominoBase, &srcRect, destRect);
+	SDL_SetTextureColorMod(assets.tetrominoBase, ColorComponentsRGB(color));
+	SDL_RenderCopy(renderer, assets.tetrominoBase, &srcRect, destRect);
 	
-	SDL_SetTextureColorMod(assets->tetrominoBase, 255, 255, 255);
-	SDL_RenderCopy(renderer, assets->tetrominoHighlight, &srcRect, destRect);
+	SDL_SetTextureColorMod(assets.tetrominoBase, 255, 255, 255);
+	SDL_RenderCopy(renderer, assets.tetrominoHighlight, &srcRect, destRect);
 }
 
 void DrawTetromino(SDL_Renderer* renderer, const Tetromino* tetromino)
@@ -197,6 +212,26 @@ void DrawTetromino(SDL_Renderer* renderer, const Tetromino* tetromino)
 		cellRect.y = tetromino->cells[i].y * CELLSIZE;
 		DrawTetrominoCell(renderer, &cellRect, tetromino->color);
 	}
+}
+
+void DrawTetrominoCentered(SDL_Renderer* renderer, const Tetromino* tetromino)
+{
+  	for (int i = 0; i < 4; i++)
+  	{
+		cellRect.x = tetromino->cells[i].x * CELLSIZE;
+		cellRect.y = tetromino->cells[i].y * CELLSIZE;
+		if (tetromino->shape == Shape_O)
+		{
+			cellRect.x -= CELLSIZE / 2;
+			cellRect.y -= CELLSIZE;
+		}
+		else if (tetromino->shape == Shape_I)
+		{
+			cellRect.x -= CELLSIZE / 2;
+			cellRect.y -= CELLSIZE / 2;
+		}
+		DrawTetrominoCell(renderer, &cellRect, tetromino->color);
+  	}
 }
 
 Uint64 GetTimeSinceLastMove(void)

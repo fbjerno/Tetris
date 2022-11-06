@@ -1,0 +1,10 @@
+custom, faster buffered input (use SDL_GetKeyboardState(NULL))
+draw outline of tetromino where it will land
+points when 
+score based on combos
+flashing (vfx), sfx
+wall kicks
+losing
+
+(maybe)
+scoreboard
