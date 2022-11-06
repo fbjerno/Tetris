@@ -1,4 +1,5 @@
-custom, faster buffered input (use SDL_GetKeyboardState(NULL))
+instead of using SDL_GeyKeyboardState(), set bool movingX to -1/1 when left/right pressed, and 0 when released
+add small timer that makes moving faster after maybe 100ms, so you can be precise when you need to, but fast otherwise
 draw outline of tetromino where it will land
 points when 
 score based on combos

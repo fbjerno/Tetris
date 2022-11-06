@@ -3,6 +3,7 @@
 #include "Point.h"
 #include "Level.h"
 #include "Tetromino.h"
+#include "Input.h"
 #include "Assets.h"
 #include "SDL.h"
 #include "SDL_timer.h"
@@ -36,6 +37,9 @@ Tetromino tetromino;
 Uint64 currentTime = 0;
 Uint64 lastTime = 0;
 
+Uint64 lastMoveYTime = 0;
+Uint64 lastMoveXTime = 0;
+
 bool shouldExit = false;
 
 Tetromino nextTetromino;
@@ -43,6 +47,8 @@ Tetromino storedTetromino = {0};
 bool hasStoredTetromino = false;
 
 FC_Effect textEffect;
+
+TetrisInput lastInput;
 
 Tetromino GetNextTetromino(void)
 {
@@ -102,6 +108,7 @@ void HandleEventsTetris(void)
 				SDL_Keycode key = event.key.keysym.sym;
 				switch (key)
 				{
+				/*
 					case SDLK_LEFT:
 						TryMoveTetromino(&tetromino, POINT_LEFT, &level);
 						break;
@@ -111,7 +118,9 @@ void HandleEventsTetris(void)
 					case SDLK_DOWN:
 						TryMoveTetromino(&tetromino, POINT_DOWN, &level);
 						break;
+					*/
 					case SDLK_UP:
+						// TODO: only rotate when clicked, not when held
 						TryRotateTetromino(&tetromino, &level, true);
 						break;
 					case SDLK_SPACE:
@@ -135,19 +144,45 @@ void HandleEventsTetris(void)
 				break;
 		}
 	}
+
+	TetrisInput input = InputFromKeyboardState(SDL_GetKeyboardState(NULL));
+	if (currentTime - lastMoveXTime > 70)
+	{
+		int moveX = 0;
+		if (input.left)
+			moveX--;
+		if (input.right)
+			moveX++;
+		if (moveX != 0)
+		{
+			if(TryMoveTetromino(&tetromino, (Point){moveX, 0}, &level))
+				lastMoveXTime = currentTime;
+		}
+	}
+	
+	if (currentTime - lastMoveYTime > 70)
+	{
+		if (input.down)
+		{
+			if (TryMoveTetromino(&tetromino, POINT_DOWN, &level))
+				lastMoveYTime = currentTime;
+		}
+	}
 }
 
 void UpdateTetris(void)
 {
-    HandleEventsTetris();
-	
 	currentTime = SDL_GetTicks64();
 	
-	if (GetTimeSinceLastMove() > speed && CanMoveTetromino(&tetromino, POINT_DOWN, &level))
-		MoveTetromino(&tetromino, POINT_DOWN);
+    HandleEventsTetris();
 	
-	if (GetTimeSinceLastMove() > speed * 2)
-		PlaceTetromino();
+	if (currentTime - lastMoveYTime > speed)
+	{
+		if (!TryMoveTetromino(&tetromino, POINT_DOWN, &level))
+			PlaceTetromino();
+			
+		lastMoveYTime = currentTime;
+	}
 	
 	int linesCleared = 0;
 	for (int y = 0; y < LEVELHEIGHT; y++)
