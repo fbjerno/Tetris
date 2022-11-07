@@ -214,6 +214,19 @@ void DrawTetromino(SDL_Renderer* renderer, const Tetromino* tetromino)
 	}
 }
 
+void DrawTetrominoOutline(SDL_Renderer* renderer, const Tetromino* tetromino, SDL_Color color)
+{
+	// Using inline instead of outline because it looks better
+	static SDL_Rect inlineRect = {0, 0, CELLSIZE - 2, CELLSIZE - 2};
+	for (int i = 0; i < 4; i++)
+	{
+		inlineRect.x = tetromino->cells[i].x * CELLSIZE;
+		inlineRect.y = tetromino->cells[i].y * CELLSIZE;
+		SDL_SetRenderDrawColor(renderer, 75, 75, 75, 255);//ColorComponents(tetromino->color));
+		SDL_RenderDrawRect(renderer, &inlineRect);
+	}
+}
+
 void DrawTetrominoCentered(SDL_Renderer* renderer, const Tetromino* tetromino)
 {
   	for (int i = 0; i < 4; i++)

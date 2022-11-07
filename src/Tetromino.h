@@ -34,6 +34,7 @@ bool TryRotateTetromino(Tetromino* tetromino, const Level* level, bool wallKick)
 
 void DrawTetrominoCell(SDL_Renderer* renderer, const SDL_Rect* destRect, Color color);
 void DrawTetromino(SDL_Renderer* renderer, const Tetromino* position);
+void DrawTetrominoOutline(SDL_Renderer* renderer, const Tetromino* position, SDL_Color color);
 void DrawTetrominoCentered(SDL_Renderer* renderer, const Tetromino* position);
 
 Uint64 GetTimeSinceLastMove(void);

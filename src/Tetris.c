@@ -108,7 +108,7 @@ void HandleEventsTetris(void)
 				SDL_Keycode key = event.key.keysym.sym;
 				switch (key)
 				{
-				/*
+				
 					case SDLK_LEFT:
 						TryMoveTetromino(&tetromino, POINT_LEFT, &level);
 						break;
@@ -118,7 +118,7 @@ void HandleEventsTetris(void)
 					case SDLK_DOWN:
 						TryMoveTetromino(&tetromino, POINT_DOWN, &level);
 						break;
-					*/
+					
 					case SDLK_UP:
 						// TODO: only rotate when clicked, not when held
 						TryRotateTetromino(&tetromino, &level, true);
@@ -146,6 +146,7 @@ void HandleEventsTetris(void)
 	}
 
 	TetrisInput input = InputFromKeyboardState(SDL_GetKeyboardState(NULL));
+	/*
 	if (currentTime - lastMoveXTime > 70)
 	{
 		int moveX = 0;
@@ -158,7 +159,7 @@ void HandleEventsTetris(void)
 			if(TryMoveTetromino(&tetromino, (Point){moveX, 0}, &level))
 				lastMoveXTime = currentTime;
 		}
-	}
+	}*/
 	
 	if (currentTime - lastMoveYTime > 70)
 	{
@@ -178,10 +179,16 @@ void UpdateTetris(void)
 	
 	if (currentTime - lastMoveYTime > speed)
 	{
-		if (!TryMoveTetromino(&tetromino, POINT_DOWN, &level))
+		if (CanMoveTetromino(&tetromino, POINT_DOWN, &level))
+		{
+			MoveTetromino(&tetromino, POINT_DOWN);
+			lastMoveYTime = currentTime;
+		}
+		else if (currentTime - lastMoveYTime > speed + speed / 2)
+		{
 			PlaceTetromino();
-			
-		lastMoveYTime = currentTime;
+			lastMoveYTime = currentTime;
+		}
 	}
 	
 	int linesCleared = 0;
@@ -205,6 +212,13 @@ void DrawGame(void)
 {
     SDL_RenderSetViewport(application.renderer, &gameBounds);
     DrawLevel(application.renderer, &level);
+
+	// Draw outline where the tetromino will land
+	Tetromino outline = tetromino;
+	while (TryMoveTetromino(&outline, POINT_DOWN, &level)){}
+	DrawTetrominoOutline(application.renderer, &outline, (SDL_Color) {75, 75, 75, 255});
+
+		// Draw tetromino after out(actually in)line so the outline doesnt get drawn on top of the tetromino in certain cases
     DrawTetromino(application.renderer, &tetromino);
 }
 
